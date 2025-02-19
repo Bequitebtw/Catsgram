@@ -8,7 +8,6 @@ import ru.yandex.practicum.catsgram.model.User;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -51,10 +50,12 @@ public class UserService {
         return users.keySet().stream().mapToLong(Long::longValue).max().orElse(0) + 1;
     }
 
-    public Optional<User> findUserById(Long id) {
+    /* Не хотел перекидывать проверку на null на контроллер, поэтому выкинул исключение в этом методе
+     и не стал оборачивать в Optional (не знаю насколько это правильно) */
+    public User findUserById(Long id) {
         if (users.containsKey(id)) {
-            return Optional.of(users.get(id));
+            return users.get(id);
         }
-        return Optional.empty();
+        throw new ConditionsNotMetException("Автор с id " + id + " не найден");
     }
 }

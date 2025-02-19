@@ -7,9 +7,7 @@ import ru.yandex.practicum.catsgram.exception.NotFoundException;
 import ru.yandex.practicum.catsgram.model.Post;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -17,8 +15,42 @@ public class PostService {
     private final Map<Long, Post> posts = new HashMap<>();
     private final UserService userService;
 
-    public Collection<Post> findAll() {
-        return posts.values();
+    /* Выводит последние 10 постов с конца, в принципе можно убрать этот метод, но мне кажется он быстрее
+        чем выводить 10 элементов с конца через finWithParams
+     */
+    public Collection<Post> findFreshPosts() {
+        return posts.values().stream().toList().subList(Math.max(0, posts.size() - 10), posts.size());
+    }
+
+    public Collection<Post> findWithParams(String sort, String size, String from) {
+        ArrayList<Post> listWithParams = new ArrayList<>();
+        int integerSize = Integer.parseInt(size);
+        int integerFrom = Integer.parseInt(from);
+
+        //чтобы не выводился пустой массив при неправильном вводе
+        if (integerFrom <= 0) {
+            integerFrom = 1;
+        }
+        if (integerSize <= 0) {
+            integerSize = 10;
+        }
+        //чтобы цикл не вышел за границы массива
+        if (posts.size() < integerSize) {
+            integerSize = posts.size();
+        }
+        for (long x = integerFrom; x < integerFrom + integerSize; x++) {
+            /* На случай если будет удаление постов, то поста с айди по порядку может не быть. Для вывода точного количества
+              элементов не отталкиваясь от id, можно написать дополнительную проверку, чтобы поиск не выходил
+              за рамки массива и добавлял integerFrom если post не найден.
+            */
+            if (posts.get(x) != null) {
+                listWithParams.add(posts.get(x));
+            }
+        }
+        if (sort.equals("asc")) {
+            return listWithParams.stream().sorted(Comparator.comparing(Post::getPostDate)).toList();
+        }
+        return listWithParams.stream().sorted(Comparator.comparing(Post::getPostDate).reversed()).toList();
     }
 
     public Post update(Post newPost) {
@@ -37,9 +69,7 @@ public class PostService {
     }
 
     public Post create(Post post) {
-        if (userService.findUserById(post.getAuthorId()).isEmpty()) {
-            throw new ConditionsNotMetException("Автор с id " + post.getAuthorId() + " не найден");
-        }
+        userService.findUserById(post.getAuthorId());
         if (post.getDescription() == null || post.getDescription().isBlank()) {
             throw new ConditionsNotMetException("Описание не может быть пустым");
         }
@@ -47,6 +77,13 @@ public class PostService {
         post.setPostDate(Instant.now());
         posts.put(post.getId(), post);
         return post;
+    }
+
+    public Post findPostById(Long id) {
+        if (posts.containsKey(id)) {
+            return posts.get(id);
+        }
+        throw new ConditionsNotMetException("Нет поста с id: " + id);
     }
 
     private long getNextId() {
