@@ -1,6 +1,7 @@
 package ru.yandex.practicum.catsgram.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.catsgram.model.Post;
 import ru.yandex.practicum.catsgram.service.PostService;
@@ -36,6 +37,7 @@ public class PostController {
         return postService.update(newPost);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Post create(@RequestBody Post post) {
         return postService.create(post);
