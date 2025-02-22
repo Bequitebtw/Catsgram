@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.catsgram.exception.ConditionsNotMetException;
 import ru.yandex.practicum.catsgram.exception.NotFoundException;
+import ru.yandex.practicum.catsgram.exception.ParameterNotValidException;
+import ru.yandex.practicum.catsgram.exception.ParameterParseException;
 import ru.yandex.practicum.catsgram.model.Post;
 
 import java.time.Instant;
@@ -24,15 +26,23 @@ public class PostService {
 
     public Collection<Post> findWithParams(String sort, String size, String from) {
         ArrayList<Post> listWithParams = new ArrayList<>();
-        int integerSize = Integer.parseInt(size);
-        int integerFrom = Integer.parseInt(from);
-
-        //чтобы не выводился пустой массив при неправильном вводе
-        if (integerFrom <= 0) {
-            integerFrom = 1;
+        int integerSize;
+        int integerFrom;
+        try {
+            integerSize = Integer.parseInt(size);
+            integerFrom = Integer.parseInt(from);
+        } catch (NumberFormatException e) {
+            //Создал дополнительной исключение, а также хэндлер, если size или from не являются числами
+            throw new ParameterParseException("Параметры from и size должны быть числовыми");
+        }
+        if (!sort.equals("asc") && !sort.equals("desk")) {
+            throw new ParameterNotValidException("sort", "Некорректный параметр сортировки. Допустимые значения asc или desk");
         }
         if (integerSize <= 0) {
-            integerSize = 10;
+            throw new ParameterNotValidException("size", "Некорректный размер выборки. Размер должен быть больше нуля");
+        }
+        if (integerFrom <= 0) {
+            throw new ParameterNotValidException("from", "Некорректный параметр начала выборки. Значение должно быть больше нуля");
         }
         //чтобы цикл не вышел за границы массива
         if (posts.size() < integerSize) {
@@ -41,7 +51,7 @@ public class PostService {
         for (long x = integerFrom; x < integerFrom + integerSize; x++) {
             /* На случай если будет удаление постов, то поста с айди по порядку может не быть. Для вывода точного количества
               элементов не отталкиваясь от id, можно написать дополнительную проверку, чтобы поиск не выходил
-              за рамки массива и добавлял integerFrom если post не найден.
+              за рамки массива и инкрементировал integerFrom если post не найден.
             */
             if (posts.get(x) != null) {
                 listWithParams.add(posts.get(x));

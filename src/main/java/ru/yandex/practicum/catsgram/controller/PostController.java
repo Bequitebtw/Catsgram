@@ -14,14 +14,17 @@ import java.util.Collection;
 public class PostController {
     private final PostService postService;
 
-    //Не задана сортировка sort - сортируется по возрастанию
-    //Не задан параметр size или size <= 0 - выводится 10 элементов
-    //Не задан параметр from или from <= 0 - вывод начинается с единицы
+    /*   Не понял как реализовать, что если нет параметров ищутся последние 10 постов, а если есть, то по параметрам.
+        Какие в итоге параметры выставлять в дефолте? пока что сделал так, маловероятно что пользователь выставит такие значения
+        поэтому они будут считаться за дефолтные, но я бы сделал отдельный эндпоинт для этого.
+        Сейчас фактически все параметры для пользователя являются обязательными, хотя допустим сортировку можно было бы
+        сделать по дефолту в asc
+        */
     @GetMapping()
-    public Collection<Post> findAll(@RequestParam(defaultValue = "asc") String sort,
-                                    @RequestParam(defaultValue = "0") String size,
-                                    @RequestParam(defaultValue = "0") String from) {
-        if (sort.equals("asc") && size.equals("0") && from.equals("0")) {
+    public Collection<Post> findAll(@RequestParam(defaultValue = "sort") String sort,
+                                    @RequestParam(defaultValue = "size") String size,
+                                    @RequestParam(defaultValue = "from") String from) {
+        if (sort.equals("sort") || size.equals("size") || from.equals("from")) {
             return postService.findFreshPosts();
         }
         return postService.findWithParams(sort, size, from);
